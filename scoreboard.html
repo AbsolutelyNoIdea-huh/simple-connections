@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scoreboard - Simple connections</title>
+<link rel="icon" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <img class="logo logo-light" alt="Aion Silicon" src="assets/logo-light.svg">
+      <img class="logo logo-dark" alt="Aion Silicon" src="assets/logo-dark.svg">
+    </div>
+    <nav class="tabs" id="rounds" aria-label="Saved rounds" hidden></nav>
+  </header>
+
+  <section class="intro" id="setup" hidden>
+    <p class="kicker">Scoreboard</p>
+    <h1>Not set up yet.</h1>
+    <p class="lede">This copy of the game isn't connected to its database yet.</p>
+  </section>
+
+  <section class="intro" id="empty" hidden>
+    <p class="kicker">Scoreboard</p>
+    <h1>Nothing yet.</h1>
+    <p class="lede" id="emptyMsg">The host hasn't published any scores. They'll appear here as soon as they do: this page checks every 20 seconds.</p>
+  </section>
+
+  <section class="scores" id="main" hidden>
+    <p class="kicker" id="sbKicker"></p>
+    <h1>Final scores.</h1>
+    <p class="lede" id="sbMeta"></p>
+    <div id="sbTable"></div>
+    <p class="note" id="sbFoot">Points per puzzle: 4 for a clean sweep, then 3, 2, 1, and 0 if it wasn't solved. Ties go to the quicker team; teams still playing when the round closed are ranked by groups found.</p>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/scoreboard.js"></script>
+</body>
+</html>

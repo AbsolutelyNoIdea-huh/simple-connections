@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simple connections</title>
+<link rel="icon" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <img class="logo logo-light" alt="Aion Silicon" src="assets/logo-light.svg">
+      <img class="logo logo-dark" alt="Aion Silicon" src="assets/logo-dark.svg">
+    </div>
+    <nav class="tabs" id="tabs" aria-label="Puzzles" hidden></nav>
+    <div class="whoami" id="whoami" hidden>
+      <span class="timer" id="timer" role="timer" aria-live="off" hidden><small id="timerLabel">Time left</small><span id="timerText">—</span></span>
+      <span><b id="whoName"></b></span>
+      <span class="codepill" id="whoCode" title="Your team code: use it to get back in"></span>
+    </div>
+  </header>
+
+  <!-- 0. Not connected to a database yet -->
+  <section class="intro" id="setup" hidden>
+    <p class="kicker">Simple connections</p>
+    <h1>Not set up yet.</h1>
+    <p class="lede" id="setupMsg">This copy of the game isn't connected to its database. If you're the host, fill in <code>config.js</code> as the setup guide describes, then reload this page.</p>
+  </section>
+
+  <!-- 1. Join -->
+  <section class="intro" id="join" hidden>
+    <p class="kicker">Values Month, week 4: Simple solutions</p>
+    <h1>Simple connections.</h1>
+    <p class="lede">Sixteen words hide four groups of four. Spot what links them, then find the group. <span id="introPuzzles">Three puzzles</span>, each one a little harder than the last.</p>
+    <ol class="rules">
+      <li><b>Find a group</b>Select the four words you think belong together, then press Submit.</li>
+      <li><b>Four mistakes</b>Each puzzle allows four wrong guesses. Watch out for words that seem to fit more than one group.</li>
+      <li><b>Fewer mistakes, more points</b>A clean sweep is 4 points, then 3, 2, 1. <span id="introPoints">Twelve points are</span> on the table.</li>
+    </ol>
+    <div class="sample" aria-label="Difficulty, easiest to hardest">
+      <span class="g1">Easiest</span><span class="g2">Easy</span><span class="g3">Tricky</span><span class="g4">Hardest</span>
+    </div>
+
+    <p class="gamestate" id="gameState" aria-live="polite" hidden></p>
+
+    <form class="join" id="joinForm" autocomplete="off">
+      <div class="field" id="nameField">
+        <label for="teamName">Enter your team name</label>
+        <input id="teamName" name="teamName" maxlength="32" placeholder="e.g. The Wafer Thins" autocomplete="off">
+      </div>
+      <div class="field code" id="codeField" hidden>
+        <label for="teamCode">Enter your team code</label>
+        <input id="teamCode" name="teamCode" maxlength="5" placeholder="ABC12" autocapitalize="characters" autocomplete="off">
+      </div>
+      <p class="error" id="joinError" hidden></p>
+      <div class="join-actions">
+        <button class="btn primary" type="submit" id="startBtn">Join</button>
+        <button class="btn" type="button" id="haveCodeBtn">I already have a code</button>
+      </div>
+      <p class="note" id="joinNote">You'll get a short code when you join. Keep it: it lets you carry on if you refresh or switch device.</p>
+    </form>
+  </section>
+
+  <!-- 2. Lobby: joined, waiting for the host to start -->
+  <section class="intro" id="lobby" hidden>
+    <p class="kicker">Waiting for the host</p>
+    <h1>You're in.</h1>
+    <p class="waiting"><i aria-hidden="true"></i><span id="lobbyMsg">The board appears here the moment the host starts the game. No need to refresh.</span></p>
+    <div class="ticket">
+      <p class="label">Your team code</p>
+      <p class="bigcode" id="lobbyCode"></p>
+      <p class="note">Write it down. If this page is lost, open the link again, choose "I already have a code" and type it in. Your progress is kept.</p>
+    </div>
+    <ol class="rules">
+      <li><b>Find a group</b>Select four words that belong together, then press Submit.</li>
+      <li><b>Four mistakes</b>Each puzzle allows four wrong guesses.</li>
+      <li><b>Fewer mistakes, more points</b>4 points for a clean sweep, then 3, 2, 1. Ties go to the quicker team.</li>
+    </ol>
+  </section>
+
+  <!-- 3. Play -->
+  <section class="game" id="game" hidden>
+    <div class="prompt">
+      <h2 id="pTitle">Puzzle 1.</h2>
+      <p id="pSub">Create four groups of four.</p>
+    </div>
+    <div class="notice" id="timeUp" role="status" hidden><b id="timeUpTitle">Time's up.</b><span id="timeUpMsg">The host is about to close the round.</span></div>
+    <div class="board" id="board" aria-live="polite"></div>
+    <div id="play">
+      <div class="status"><span>Mistakes left</span><div class="dots" id="dots" aria-label="Mistakes left"></div></div>
+      <div class="controls">
+        <button class="btn" id="shuffleBtn" type="button">Shuffle</button>
+        <button class="btn" id="clearBtn" type="button">Deselect all</button>
+        <button class="btn primary" id="submitBtn" type="button" disabled>Submit</button>
+      </div>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+    <div class="end" id="end" hidden>
+      <h3 id="endMsg"></h3>
+      <span class="pts" id="endPts"></span>
+      <button class="btn primary" id="nextBtn" type="button">Next puzzle</button>
+    </div>
+  </section>
+
+  <!-- 4. Finished, or the host has frozen the round -->
+  <section class="intro" id="finale" hidden>
+    <p class="kicker" id="finKicker">That's a wrap</p>
+    <h1 id="finTitle">All done.</h1>
+    <p class="lede" id="finLede">Every group had one simple idea behind it. The trick was ignoring the words that looked like they fit. Wait for the host to reveal the scoreboard.</p>
+    <div class="card" id="scorecard">
+      <h3>Your card.</h3>
+      <div id="cardRows"></div>
+    </div>
+    <p><a class="btn" id="boardLink" href="scoreboard.html" hidden>See the scoreboard</a></p>
+  </section>
+</div>
+
+<!-- Host has paused the game -->
+<div class="curtain" id="curtain" hidden>
+  <div>
+    <h2>Paused by the host.</h2>
+    <p>Hold tight: the game is paused right now. This page picks up exactly where you left off as soon as the host resumes it.</p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

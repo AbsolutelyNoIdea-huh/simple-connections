@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Host console - Simple connections</title>
+<link rel="icon" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+
+<!-- Not connected to a database yet -->
+<section class="login" id="setup" hidden>
+  <img class="logo logo-light" alt="Aion Silicon" src="assets/logo-light.svg">
+  <img class="logo logo-dark" alt="Aion Silicon" src="assets/logo-dark.svg">
+  <h1>Not set up yet.</h1>
+  <p>This copy of the game isn't connected to its database. Fill in <code>config.js</code> with your Supabase project's URL and key, as the setup guide describes, then reload.</p>
+</section>
+
+<!-- Passcode -->
+<section class="login" id="login" hidden>
+  <img class="logo logo-light" alt="Aion Silicon" src="assets/logo-light.svg">
+  <img class="logo logo-dark" alt="Aion Silicon" src="assets/logo-dark.svg">
+  <h1>Host console.</h1>
+  <p>Enter the passcode to run the game.</p>
+  <form class="join" id="loginForm" autocomplete="off">
+    <div class="field">
+      <label for="passcode">Passcode</label>
+      <input id="passcode" type="password" required autocomplete="current-password">
+    </div>
+    <p class="error" id="loginError" hidden></p>
+    <button class="btn primary" type="submit" id="unlockBtn">Unlock</button>
+  </form>
+</section>
+
+<!-- Console -->
+<div class="admin-wrap" id="console" hidden>
+  <div class="adminbar">
+    <div class="bar-left">
+      <img class="logo logo-light" alt="Aion Silicon" src="assets/logo-light.svg">
+      <img class="logo logo-dark" alt="Aion Silicon" src="assets/logo-dark.svg">
+      <h1>Host console.</h1>
+      <span class="pill" id="statusPill">—</span>
+    </div>
+    <div class="bar-actions">
+      <button class="btn sm" type="button" id="presentBtn">Presentation mode</button>
+      <button class="btn sm" type="button" id="exportBtn">Export CSV</button>
+      <button class="btn sm" type="button" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+
+  <p class="banner" id="banner" role="alert" hidden></p>
+
+  <!-- The round: clock and controls -->
+  <section class="round" aria-label="Round controls">
+    <div class="round-clock">
+      <p class="label" id="clockLabel">Time left</p>
+      <p class="clock" id="clock" role="timer">—</p>
+      <p class="note" id="clockNote"></p>
+    </div>
+
+    <div class="round-controls">
+      <div class="field inline">
+        <label for="roundLabel">Round name</label>
+        <input id="roundLabel" maxlength="60" placeholder="Round 1">
+      </div>
+
+      <div class="ctl" id="lobbyControls" hidden>
+        <div class="field inline narrow">
+          <label for="minutes">Timer, in minutes (0 for none)</label>
+          <input id="minutes" type="number" min="0" max="1440" step="1" value="15">
+        </div>
+        <div class="btnrow">
+          <button class="btn primary" type="button" id="startBtn">Start the game</button>
+        </div>
+      </div>
+
+      <div class="ctl btnrow" id="liveControls" hidden>
+        <button class="btn sm" type="button" id="pauseBtn">Pause</button>
+        <button class="btn sm" type="button" id="addMinBtn">+1 min</button>
+        <button class="btn sm" type="button" id="setTimeBtn">Set time</button>
+        <button class="btn sm" type="button" id="freezeBtn">Freeze and save scores</button>
+      </div>
+
+      <div class="ctl btnrow" id="frozenControls" hidden>
+        <button class="btn sm primary" type="button" id="newRoundBtn">Start a new round</button>
+        <button class="btn sm" type="button" id="unfreezeBtn">Unfreeze</button>
+      </div>
+
+      <label class="check"><input type="checkbox" id="lockBox"> Stop guesses when the time runs out</label>
+    </div>
+  </section>
+
+  <div class="links">
+    <span>Player link</span>
+    <a id="playerLink" target="_blank" rel="noopener"></a>
+    <button class="btn sm" type="button" id="copyLinkBtn">Copy</button>
+    <span class="sep">Scoreboard</span>
+    <a id="scoreLink" target="_blank" rel="noopener"></a>
+  </div>
+
+  <div class="summary">
+    <div><b id="sTeams">0</b>teams joined</div>
+    <div><b id="sPlaying">0</b>still playing</div>
+    <div><b id="sDone">0</b>finished</div>
+    <div><b id="sTop">—</b>leader</div>
+    <div><b id="sUpdated">—</b>last updated</div>
+  </div>
+
+  <div id="tableBox"></div>
+  <p class="note" style="margin-top:16px">Updates every 2 seconds. Players never see this page or each other's scores.</p>
+
+  <section class="saved">
+    <h2>Saved scoreboards.</h2>
+    <p class="note">Freezing a round saves its scores here. Publish a round to show it on the public scoreboard page.</p>
+    <div id="savedBox"></div>
+  </section>
+
+  <section class="danger-zone">
+    <div class="btnrow">
+      <button class="btn sm" type="button" id="newRoundBtn2">Start a new round</button>
+      <button class="btn sm danger" type="button" id="resetBtn">Reset everything</button>
+    </div>
+    <p class="note">A new round clears the teams and keeps the saved scoreboards. Reset deletes the saved scoreboards too.</p>
+  </section>
+</div>
+
+<!-- Presentation scoreboard -->
+<div class="stage" id="stage" hidden>
+  <div class="stage-head">
+    <div>
+      <img class="logo logo-light" alt="Aion Silicon" src="assets/logo-light.svg">
+      <img class="logo logo-dark" alt="Aion Silicon" src="assets/logo-dark.svg">
+    </div>
+    <div class="stage-title">
+      <p class="kicker" id="stageKicker"></p>
+      <h2 id="stageTitle">Final scores.</h2>
+    </div>
+    <div class="stage-spacer"></div>
+  </div>
+  <div class="stage-body" id="stageBody"></div>
+  <div class="stage-foot">
+    <span class="hint" id="stageHint">Click Reveal to count down from last place.</span>
+    <div class="btnrow">
+      <button class="btn big" type="button" id="stageExit">Exit</button>
+      <button class="btn big primary" type="button" id="revealBtn">Reveal</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>
