@@ -97,8 +97,11 @@
       line.appendChild(el("b", null, "Not ready yet."));
       line.appendChild(document.createTextNode("The host is still setting up. Check back in a moment."));
     } else if (g.status === "lobby") {
+      var waiting = info.teams_joined || 0;
       line.appendChild(el("b", null, "Not started yet."));
-      line.appendChild(document.createTextNode("Join now and you'll all start together."));
+      line.appendChild(document.createTextNode(waiting
+        ? (waiting === 1 ? "1 team is" : waiting + " teams are") + " in the lobby. Join now and you'll all start together."
+        : "Join now and you'll all start together."));
     } else if (g.status === "live") {
       var left = SC.timeLeft(g);
       if (left === 0 && g.lock_at_zero) {
@@ -133,6 +136,8 @@
     bad_name: "Please keep the name to 32 characters or fewer.",
     paused: "The game is paused. Try again when the host resumes.",
     round_over: "This round has finished. The host will open a new one if there's another.",
+    time_up: "Time's up for this round, so new teams can't join. Wait for the next one.",
+    full: "The game is full. Ask the host to make room.",
     not_ready: "The game isn't ready yet. Try again in a moment.",
     not_set_up: "The game's database isn't set up yet. Let the host know.",
     network: "Can't reach the game. Check your connection and try again."
@@ -230,9 +235,10 @@
     if (g.status === "lobby") {
       showOnly("lobby");
       $("tabs").hidden = true;
-      $("lobbyCode").textContent = state.team.code;
+      renderLobby();
       return;
     }
+    lobbySeen = null;
     if (view === "card") {
       showFinale();
       return;
@@ -302,6 +308,44 @@
     }
 
     renderTabs();
+  }
+
+  // The waiting room: this team, everyone else who has joined (names only,
+  // in the order they arrived), and the host's go still to come. A team
+  // that arrives after this screen first drew is animated in and announced
+  // to screen readers; the first draw is quiet.
+  var lobbySeen = null;   // names already on screen, or null before the first draw
+
+  function renderLobby() {
+    $("lobbyName").textContent = state.team.name;
+    $("lobbyCode").textContent = state.team.code;
+
+    var teams = state.lobby_teams || [];
+    var others = teams.filter(function (t) { return !t.you; }).length;
+    $("lobbyCount").textContent = teams.length === 1 ? "1 team" : teams.length + " teams";
+    $("lobbyAlone").hidden = others > 0;
+
+    var first = lobbySeen === null;
+    var seen = lobbySeen || {};
+    var arrivals = [];
+    var list = $("lobbyTeams");
+    list.innerHTML = "";
+    teams.forEach(function (t) {
+      var li = el("li", t.you ? "you" : "");
+      li.appendChild(el("span", null, t.name));
+      if (t.you) li.appendChild(el("span", "tag", "You"));
+      if (!first && !seen[t.name]) {
+        li.className += " arrived";
+        if (!t.you) arrivals.push(t.name);
+      }
+      list.appendChild(li);
+    });
+
+    lobbySeen = {};
+    teams.forEach(function (t) { lobbySeen[t.name] = true; });
+    if (arrivals.length) {
+      $("lobbyAnnounce").textContent = arrivals.join(", ") + (arrivals.length === 1 ? " has" : " have") + " joined.";
+    }
   }
 
   function groupBar(g, missed) {
@@ -525,7 +569,8 @@
     var g = s.game, t = g.timer;
     return [g.status, g.lock_at_zero,
             t ? [t.running, t.running ? t.ends_at : t.left_ms, t.total_s].join(",") : "none",
-            s.current, s.all_done, s.total_points]
+            s.current, s.all_done, s.total_points,
+            (s.lobby_teams || []).map(function (x) { return x.name; }).join("\u0001")]
       .concat(s.puzzles.map(function (p) {
         return p.status + ":" + p.mistakes + ":" + p.solved.length + ":" + p.words.length;
       }))

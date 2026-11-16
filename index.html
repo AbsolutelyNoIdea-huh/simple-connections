@@ -67,15 +67,32 @@
   </section>
 
   <!-- 2. Lobby: joined, waiting for the host to start -->
-  <section class="intro" id="lobby" hidden>
-    <p class="kicker">Waiting for the host</p>
+  <section class="intro lobby" id="lobby" hidden>
+    <p class="kicker">Lobby</p>
     <h1>You're in.</h1>
-    <p class="waiting"><i aria-hidden="true"></i><span id="lobbyMsg">The board appears here the moment the host starts the game. No need to refresh.</span></p>
-    <div class="ticket">
-      <p class="label">Your team code</p>
-      <p class="bigcode" id="lobbyCode"></p>
-      <p class="note">Write it down. If this page is lost, open the link again, choose "I already have a code" and type it in. Your progress is kept.</p>
+    <p class="waiting"><i aria-hidden="true"></i><span>Waiting on the host to launch the game.</span></p>
+    <p class="lobby-sub">Every board appears at the same moment, right here. No need to refresh.</p>
+
+    <div class="lobby-grid">
+      <div class="ticket">
+        <p class="label">Your team</p>
+        <p class="teamname" id="lobbyName"></p>
+        <p class="label">Team code</p>
+        <p class="bigcode" id="lobbyCode"></p>
+        <p class="note">Keep this code. If the page is lost, open the link again, choose "I already have a code" and type it in.</p>
+      </div>
+
+      <div class="roster">
+        <div class="roster-head">
+          <h2>Teams in the lobby.</h2>
+          <span class="count" id="lobbyCount"></span>
+        </div>
+        <ul class="teams" id="lobbyTeams" aria-label="Teams in the lobby"></ul>
+        <p class="note" id="lobbyAlone" hidden>You're the first here. Other teams appear as they join.</p>
+      </div>
     </div>
+    <p class="sr-only" id="lobbyAnnounce" aria-live="polite"></p>
+
     <ol class="rules">
       <li><b>Find a group</b>Select four words that belong together, then press Submit.</li>
       <li><b>Four mistakes</b>Each puzzle allows four wrong guesses.</li>

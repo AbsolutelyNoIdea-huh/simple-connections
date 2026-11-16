@@ -14,7 +14,6 @@
   var token = SC.session.get("admin");
   var latest = null;        // last payload from sc_admin_state
   var pollTimer = null;
-  var working = false;      // an action is in flight
   var minutesTouched = false;
   var tableSig = "";
   var savedSig = "";
@@ -71,17 +70,22 @@
     });
   }
 
-  // One action at a time, so a double click can't fire twice.
+  // Actions run one after another, in the order clicked, so none is lost.
+  // An identical action already waiting (a double click) isn't sent twice.
+  var actionQueue = Promise.resolve();
+  var pending = {};
   function act(fn, args) {
-    if (working) return Promise.resolve(null);
-    working = true;
-    return call(fn, args).then(function (data) {
-      banner("");
-      return data;
-    }).catch(function () { return null; }).then(function (data) {
-      working = false;
-      return data;
-    });
+    var key = fn + JSON.stringify(args || {});
+    if (pending[key]) return pending[key];
+    var run = actionQueue.then(function () { return call(fn, args); })
+      .then(function (data) {
+        banner("");
+        return data;
+      }, function () { return null; });
+    actionQueue = run;
+    pending[key] = run;
+    run.then(function () { delete pending[key]; });
+    return run;
   }
 
   function take(data) {

@@ -62,7 +62,7 @@
       nav.appendChild(b);
     });
 
-    var maxPoints = 4 * r.puzzle_names.length;
+    var maxPoints = r.max_points;
     $("sbKicker").textContent = r.label;
     var saved = new Date(r.frozen_at).toLocaleString([], {
       weekday: "short", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit"
