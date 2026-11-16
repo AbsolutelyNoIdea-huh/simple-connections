@@ -255,6 +255,7 @@
     $("pauseBtn").textContent = g.status === "paused" ? "Resume" : "Pause";
     $("startBtn").disabled = latest.puzzle_count === 0;
     $("lockBox").checked = !!g.lock_at_zero;
+    $("hintsBox").checked = !!g.hints_enabled;
 
     var label = $("roundLabel");
     label.placeholder = "Round " + g.round_no;
@@ -285,6 +286,12 @@
   }
 
   function mistakes(n) { return n + " mistake" + (n === 1 ? "" : "s"); }
+
+  // "2 mistakes" or "2 mistakes, 1 hint": what a puzzle cost a team.
+  function costs(p, first) {
+    var h = p.hints || 0;
+    return first + (h ? ", " + h + (h === 1 ? " hint" : " hints") : "");
+  }
 
   function renderTable() {
     var g = latest.game;
@@ -342,10 +349,10 @@
           d.appendChild(el("span", null, g.status === "lobby" ? "waiting" : "locked"));
         } else if (p.status === "playing") {
           d.appendChild(el("b", null, p.groups_found + "/4"));
-          d.appendChild(el("span", null, mistakes(p.mistakes)));
+          d.appendChild(el("span", null, costs(p, mistakes(p.mistakes))));
         } else {
           d.appendChild(el("b", null, p.points));
-          d.appendChild(el("span", null, p.status === "solved" ? mistakes(p.mistakes) : "not solved"));
+          d.appendChild(el("span", null, costs(p, p.status === "solved" ? mistakes(p.mistakes) : "not solved")));
         }
         td.appendChild(d);
         tr.appendChild(td);
@@ -496,6 +503,10 @@
     act("sc_admin_set_lock", { p_lock: $("lockBox").checked });
   };
 
+  $("hintsBox").onchange = function () {
+    act("sc_admin_set_hints", { p_on: $("hintsBox").checked });
+  };
+
   $("roundLabel").onchange = function () {
     act("sc_admin_set_label", { p_label: $("roundLabel").value });
   };
@@ -542,13 +553,14 @@
   function downloadCsv(teams, puzzleNames, label, frozen) {
     var head = ["Rank", "Team", "Status"];
     puzzleNames.forEach(function (n, i) {
-      head.push("P" + (i + 1) + " result", "P" + (i + 1) + " mistakes", "P" + (i + 1) + " points");
+      head.push("P" + (i + 1) + " result", "P" + (i + 1) + " mistakes", "P" + (i + 1) + " hints",
+                "P" + (i + 1) + " points");
     });
     head.push("Groups found", "Total points", "Total time (s)", "Total time");
     var lines = [head.map(csvCell).join(",")];
     teams.forEach(function (t) {
       var row = [t.rank, t.name, teamStatus(t, frozen ? "frozen" : "live")];
-      t.puzzles.forEach(function (p) { row.push(p.status, p.mistakes, p.points); });
+      t.puzzles.forEach(function (p) { row.push(p.status, p.mistakes, p.hints || 0, p.points); });
       row.push(t.groups_found, t.total_points,
                t.total_time === null ? "" : Number(t.total_time).toFixed(1),
                t.total_time === null ? "" : SC.duration(t.total_time));

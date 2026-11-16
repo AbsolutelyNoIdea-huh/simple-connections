@@ -21,6 +21,7 @@
   var pollTimer = null;
   var infoTimer = null;
   var lastPlayable = null;
+  var hintAsking = false; // the "reveal a group name for a point?" step is open
 
   var SCREENS = ["setup", "join", "lobby", "game", "finale"];
   function showOnly(id) {
@@ -83,6 +84,7 @@
     if (!info || state) return;
     var g = info.game;
     var n = info.puzzle_count;
+    showHintRules(g.hints_enabled);
 
     if (n > 0) {
       $("introPuzzles").textContent = cap(SC.numberWord(n)) + (n === 1 ? " puzzle" : " puzzles");
@@ -229,6 +231,7 @@
     $("whoName").textContent = state.team.name;
     $("whoCode").textContent = state.team.code;
     $("curtain").hidden = g.status !== "paused";
+    showHintRules(g.hints_enabled);
     renderTimer();
     lastPlayable = playable();
 
@@ -269,6 +272,7 @@
     board.className = "board" + (canPlay || over ? "" : " locked");
     p.solved.forEach(function (grp) { board.appendChild(groupBar(grp, false)); });
     p.missing.forEach(function (grp) { board.appendChild(groupBar(grp, true)); });
+    (p.hints || []).forEach(function (h) { board.appendChild(hintBar(h)); });
 
     if (p.words.length) {
       var grid = el("div", "grid");
@@ -297,6 +301,20 @@
     $("clearBtn").disabled = selected.length === 0 || !canPlay;
     $("shuffleBtn").disabled = !canPlay;
     $("end").hidden = !over;
+
+    // Hints: the button, the "are you sure?" step, and what's been spent.
+    var hintsOn = !!g.hints_enabled;
+    $("hintBtn").hidden = !hintsOn;
+    $("hintBtn").disabled = busy || !canPlay || !p.hint_available;
+    $("hintBtn").title = p.hint_available ? "" : (p.hints_used >= state.max_hints
+      ? "No more hints on this puzzle" : "No hint for the last group");
+    if (!(hintsOn && canPlay && p.hint_available)) hintAsking = false;
+    $("hintAsk").hidden = !hintAsking;
+    $("hintNote").hidden = !p.hints_used;
+    $("hintNote").textContent = p.hints_used
+      ? "Hints used on this puzzle: " + p.hints_used + " of " + state.max_hints +
+        " (−" + p.hints_used + (p.hints_used === 1 ? " point)" : " points)")
+      : "";
 
     if (over) {
       $("endMsg").textContent = endMessage(p);
@@ -348,6 +366,23 @@
     }
   }
 
+  // A hinted group: its name and colour, never its words.
+  function hintBar(h) {
+    var d = el("div", "hintbar");
+    d.appendChild(el("span", "swatch g" + h.level));
+    d.appendChild(el("span", "k", "Hint"));
+    var t = el("span", null, "One group is ");
+    t.appendChild(el("b", null, h.title));
+    d.appendChild(t);
+    return d;
+  }
+
+  function showHintRules(on) {
+    Array.prototype.forEach.call(document.querySelectorAll(".hint-rule"), function (s) {
+      s.hidden = !on;
+    });
+  }
+
   function groupBar(g, missed) {
     var d = el("div", "solved g" + g.level + (missed ? " missed" : ""));
     d.appendChild(el("h3", null, g.title));
@@ -365,7 +400,7 @@
       b.type = "button";
       b.setAttribute("aria-current", i === view ? "true" : "false");
       b.disabled = p.status === "locked";
-      b.onclick = function () { view = i; selected = []; render(); };
+      b.onclick = function () { view = i; selected = []; hintAsking = false; render(); };
       t.appendChild(b);
     });
     if (finaleAvailable()) {
@@ -377,11 +412,15 @@
     }
   }
 
+  function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
+
   function endMessage(p) {
     if (p.status === "failed") return "Out of guesses. Here are the groups.";
-    if (p.mistakes === 0) return "Perfect. Solved with no mistakes: 4 points.";
-    return "Solved with " + p.mistakes + " mistake" + (p.mistakes > 1 ? "s" : "") +
-      ": " + p.points + " point" + (p.points === 1 ? "" : "s") + ".";
+    var hints = p.hints_used || 0;
+    if (p.mistakes === 0 && hints === 0) return "Perfect. Solved with no mistakes: 4 points.";
+    var how = p.mistakes === 0 ? "no mistakes" : plural(p.mistakes, "mistake");
+    if (hints) how += " and " + plural(hints, "hint");
+    return "Solved with " + how + ": " + plural(p.points, "point") + ".";
   }
 
   function showFinale() {
@@ -400,7 +439,7 @@
       var r = el("div", "cardrow");
       var how;
       if (p.status === "solved") {
-        how = p.mistakes === 0 ? "solved, no mistakes" : "solved, " + p.mistakes + " mistake" + (p.mistakes > 1 ? "s" : "");
+        how = p.mistakes === 0 ? "solved, no mistakes" : "solved, " + plural(p.mistakes, "mistake");
       } else if (p.status === "failed") {
         how = "not solved";
       } else if (p.status === "playing") {
@@ -408,6 +447,7 @@
       } else {
         how = "not reached";
       }
+      if (p.hints_used) how += ", " + plural(p.hints_used, "hint");
       r.appendChild(el("span", null, "Puzzle " + (i + 1) + " · " + how));
       r.appendChild(el("b", null, String(p.points)));
       rows.appendChild(r);
@@ -543,6 +583,7 @@
   };
 
   $("nextBtn").onclick = function () {
+    hintAsking = false;
     if (state.current !== null) {
       view = state.current;
       selected = [];
@@ -555,8 +596,54 @@
     }
   };
 
+  /* ------------------------------------------------------------ hints */
+
+  var HINT_REFUSED = {
+    no_hints: "No more hints on this puzzle.",
+    hints_off: "The host has turned hints off."
+  };
+
+  $("hintBtn").onclick = function () {
+    hintAsking = true;
+    render();
+    $("hintYes").focus();
+  };
+
+  $("hintNo").onclick = function () {
+    hintAsking = false;
+    render();
+    $("hintBtn").focus();
+  };
+
+  $("hintYes").onclick = function () {
+    if (busy || view === "card") return;
+    var p = state.puzzles[view];
+    if (p.status !== "playing" || !playable() || !p.hint_available) return;
+    busy = true;
+    $("hintYes").disabled = true;
+    SC.rpc("sc_hint", { p_code: state.team.code, p_puzzle: view })
+      .then(function (res) {
+        busy = false;
+        hintAsking = false;
+        adopt(res.state);
+        toast("Hint: one group is " + res.hint.title + ". −1 point.");
+      })
+      .catch(function (err) {
+        busy = false;
+        hintAsking = false;
+        if (err.code === "unknown_team") return kickOut();
+        if (err.data && err.data.state) adopt(err.data.state);
+        toast(HINT_REFUSED[err.code] || GUESS_REFUSED[err.code] || "Couldn't reach the game. Try again.");
+        render();
+      })
+      .then(function () { $("hintYes").disabled = false; });
+  };
+
   document.addEventListener("keydown", function (e) {
     if ($("game").hidden || e.target.tagName === "INPUT") return;
+    // Enter on a focused control (Reveal, Cancel, Shuffle…) presses that
+    // control. It only submits a guess from the tiles or the page.
+    if (e.target.tagName === "BUTTON" && !e.target.classList.contains("tile")) return;
     if (e.key === "Enter" && !$("submitBtn").disabled) {
       e.preventDefault();
       submit();
@@ -567,12 +654,13 @@
 
   function signature(s) {
     var g = s.game, t = g.timer;
-    return [g.status, g.lock_at_zero,
+    return [g.status, g.lock_at_zero, g.hints_enabled,
             t ? [t.running, t.running ? t.ends_at : t.left_ms, t.total_s].join(",") : "none",
             s.current, s.all_done, s.total_points,
             (s.lobby_teams || []).map(function (x) { return x.name; }).join("\u0001")]
       .concat(s.puzzles.map(function (p) {
-        return p.status + ":" + p.mistakes + ":" + p.solved.length + ":" + p.words.length;
+        return p.status + ":" + p.mistakes + ":" + p.solved.length + ":" + p.words.length +
+               ":" + p.hints_used + ":" + p.hint_available;
       }))
       .join("|");
   }

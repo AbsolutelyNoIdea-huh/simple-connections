@@ -39,7 +39,7 @@
     <p class="lede">Sixteen words hide four groups of four. Spot what links them, then find the group. <span id="introPuzzles">Three puzzles</span>, each one a little harder than the last.</p>
     <ol class="rules">
       <li><b>Find a group</b>Select the four words you think belong together, then press Submit.</li>
-      <li><b>Four mistakes</b>Each puzzle allows four wrong guesses. Watch out for words that seem to fit more than one group.</li>
+      <li><b>Four mistakes</b>Each puzzle allows four wrong guesses. Watch out for words that seem to fit more than one group.<span class="hint-rule"> Stuck? A hint names one group, for 1 point.</span></li>
       <li><b>Fewer mistakes, more points</b>A clean sweep is 4 points, then 3, 2, 1. <span id="introPoints">Twelve points are</span> on the table.</li>
     </ol>
     <div class="sample" aria-label="Difficulty, easiest to hardest">
@@ -95,7 +95,7 @@
 
     <ol class="rules">
       <li><b>Find a group</b>Select four words that belong together, then press Submit.</li>
-      <li><b>Four mistakes</b>Each puzzle allows four wrong guesses.</li>
+      <li><b>Four mistakes</b>Each puzzle allows four wrong guesses.<span class="hint-rule"> Stuck? A hint names one group, for 1 point.</span></li>
       <li><b>Fewer mistakes, more points</b>4 points for a clean sweep, then 3, 2, 1. Ties go to the quicker team.</li>
     </ol>
   </section>
@@ -113,8 +113,17 @@
       <div class="controls">
         <button class="btn" id="shuffleBtn" type="button">Shuffle</button>
         <button class="btn" id="clearBtn" type="button">Deselect all</button>
+        <button class="btn" id="hintBtn" type="button">Hint<span class="cost">−1 point</span></button>
         <button class="btn primary" id="submitBtn" type="button" disabled>Submit</button>
       </div>
+      <div class="hintask" id="hintAsk" role="group" aria-labelledby="hintAskText" hidden>
+        <p id="hintAskText">Reveal the name of one group? It costs 1 point on this puzzle.</p>
+        <div class="btnrow">
+          <button class="btn primary" id="hintYes" type="button">Reveal a group name</button>
+          <button class="btn" id="hintNo" type="button">Cancel</button>
+        </div>
+      </div>
+      <p class="hintnote" id="hintNote" hidden></p>
     </div>
     <div class="toast" id="toast" role="status"></div>
     <div class="end" id="end" hidden>
