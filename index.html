@@ -36,11 +36,11 @@
   <section class="intro" id="join" hidden>
     <p class="kicker">Values Month, week 4: Simple solutions</p>
     <h1>Simple connections.</h1>
-    <p class="lede">Sixteen words hide four groups of four. Spot what links them, then find the group. <span id="introPuzzles">Three puzzles</span>, each one a little harder than the last.</p>
+    <p class="lede">Sixteen words hide four groups of four. Spot what links them, then find the group. <span id="introPuzzles">Three puzzles</span>, each with its own theme.</p>
     <ol class="rules">
       <li><b>Find a group</b>Select the four words you think belong together, then press Submit.</li>
       <li><b>Four mistakes</b>Each puzzle allows four wrong guesses. Watch out for words that seem to fit more than one group.<span class="hint-rule"> Stuck? A hint names one group, for 1 point.</span></li>
-      <li><b>Fewer mistakes, more points</b>A clean sweep is 4 points, then 3, 2, 1. <span id="introPoints">Twelve points are</span> on the table.</li>
+      <li><b>Fewer mistakes, more points</b>A clean sweep is 4 points, then 3, 2, 1. If time runs out mid-puzzle, each group you found still scores. <span id="introPoints">Twelve points are</span> on the table.</li>
     </ol>
     <div class="sample" aria-label="Difficulty, easiest to hardest">
       <span class="g1">Easiest</span><span class="g2">Easy</span><span class="g3">Tricky</span><span class="g4">Hardest</span>
@@ -93,6 +93,11 @@
     </div>
     <p class="sr-only" id="lobbyAnnounce" aria-live="polite"></p>
 
+    <div class="themes" id="lobbyThemes" hidden>
+      <h2>Today's themes.</h2>
+      <ol class="themelist" id="themeList"></ol>
+    </div>
+
     <ol class="rules">
       <li><b>Find a group</b>Select four words that belong together, then press Submit.</li>
       <li><b>Four mistakes</b>Each puzzle allows four wrong guesses.<span class="hint-rule"> Stuck? A hint names one group, for 1 point.</span></li>
@@ -103,7 +108,10 @@
   <!-- 3. Play -->
   <section class="game" id="game" hidden>
     <div class="prompt">
-      <h2 id="pTitle">Puzzle 1.</h2>
+      <div>
+        <p class="theme-kicker" id="pKicker">Puzzle 1</p>
+        <h2 id="pTitle">Puzzle 1.</h2>
+      </div>
       <p id="pSub">Create four groups of four.</p>
     </div>
     <div class="notice" id="timeUp" role="status" hidden><b id="timeUpTitle">Time's up.</b><span id="timeUpMsg">The host is about to close the round.</span></div>
@@ -138,6 +146,7 @@
     <p class="kicker" id="finKicker">That's a wrap</p>
     <h1 id="finTitle">All done.</h1>
     <p class="lede" id="finLede">Every group had one simple idea behind it. The trick was ignoring the words that looked like they fit. Wait for the host to reveal the scoreboard.</p>
+    <p class="placing" id="finRank" hidden></p>
     <div class="card" id="scorecard">
       <h3>Your card.</h3>
       <div id="cardRows"></div>

@@ -262,7 +262,7 @@
     if (document.activeElement !== label) label.value = g.label || "";
 
     if (g.status === "lobby" && !minutesTouched && document.activeElement !== $("minutes")) {
-      $("minutes").value = latest.timer_default_s ? Math.round(latest.timer_default_s / 6) / 10 : 15;
+      $("minutes").value = latest.timer_default_s ? Math.round(latest.timer_default_s / 6) / 10 : 30;
     }
   }
 
@@ -349,7 +349,9 @@
           d.appendChild(el("span", null, g.status === "lobby" ? "waiting" : "locked"));
         } else if (p.status === "playing") {
           d.appendChild(el("b", null, p.groups_found + "/4"));
-          d.appendChild(el("span", null, costs(p, mistakes(p.mistakes))));
+          // In progress: groups found so far count if the round is frozen now.
+          d.appendChild(el("span", null, costs(p, mistakes(p.mistakes)) +
+            (p.points ? " · " + p.points + (p.points === 1 ? " pt" : " pts") : "")));
         } else {
           d.appendChild(el("b", null, p.points));
           d.appendChild(el("span", null, costs(p, p.status === "solved" ? mistakes(p.mistakes) : "not solved")));
@@ -607,28 +609,44 @@
     if (!latest) return;
     var g = latest.game;
     if (g.status === "frozen" && latest.saved_at) return presentSaved(g.round_no);
-    present(latest.teams, g.label || "Round " + g.round_no, false);
+    present(latest.teams, g.label || "Round " + g.round_no, false, false);
   };
 
   function presentSaved(roundNo) {
     loadSaved(roundNo).then(function (r) {
-      present(r.teams, r.label, true);
+      // The answers and highlights come from the live round, so they're only
+      // offered for the round that's frozen right now.
+      var current = latest && latest.game.status === "frozen" && latest.game.round_no === roundNo;
+      present(r.teams, r.label, true, current);
     }).catch(function () {});
   }
 
   // The ranking is captured when presentation mode opens, so it can't
   // shuffle under you while you talk.
-  function present(teams, label, final) {
+  var stageDebrief = false; // can this presentation go on to the answers?
+  var slides = null;        // the answer and highlight slides, once shown
+  var slideAt = 0;
+
+  function present(teams, label, final, withAnswers) {
     stageTeams = teams.slice();
     revealed = 0;
+    stageDebrief = !!withAnswers;
+    slides = null;
+    stageLabel = label;
     $("stageKicker").textContent = label;
     $("stageTitle").textContent = final ? "Final scores." : "Standings so far.";
     buildStage();
     $("stage").hidden = false;
     $("revealBtn").focus();
   }
+  var stageLabel = "";
 
-  $("stageExit").onclick = function () { $("stage").hidden = true; };
+  function closeStage() {
+    $("stage").hidden = true;
+    slides = null;
+  }
+
+  $("stageExit").onclick = closeStage;
 
   function buildStage() {
     var body = $("stageBody");
@@ -681,25 +699,117 @@
         : left + " teams still hidden. Click Reveal, or press the space bar.";
       $("revealBtn").disabled = false;
     } else {
-      $("revealBtn").textContent = "All revealed";
-      $("revealBtn").disabled = true;
-      $("stageHint").textContent = "Winner: " + stageTeams[0].name + " with " + stageTeams[0].total_points + " points.";
+      var winner = "Winner: " + stageTeams[0].name + " with " + stageTeams[0].total_points + " points.";
+      $("revealBtn").textContent = stageDebrief ? "Show the answers" : "All revealed";
+      $("revealBtn").disabled = !stageDebrief;
+      $("stageHint").textContent = stageDebrief ? winner + " Next: the answers." : winner;
     }
   }
 
   $("revealBtn").onclick = function () {
-    if (!stageTeams || revealed >= stageTeams.length) return;
-    revealed++;
-    updateStage();
+    if (!stageTeams) return;
+    if (slides) return nextSlide();
+    if (revealed < stageTeams.length) {
+      revealed++;
+      return updateStage();
+    }
+    if (stageDebrief) startDebrief();
   };
+
+  /* ---------------------------------------- the answers and highlights */
+
+  function startDebrief() {
+    $("revealBtn").disabled = true;
+    call("sc_admin_debrief").then(function (d) {
+      slides = d.puzzles.map(function (p) { return { kind: "puzzle", p: p, of: d.puzzles.length }; });
+      slides.push({ kind: "highlights", h: d.highlights, teams: d.teams });
+      slideAt = 0;
+      showSlide();
+    }).catch(function () {
+      $("revealBtn").disabled = false;
+    });
+  }
+
+  function nextSlide() {
+    if (slideAt < slides.length - 1) {
+      slideAt++;
+      showSlide();
+    } else {
+      closeStage();
+    }
+  }
+
+  function headline(name) {
+    var t = String(name || "").trim();
+    return /[.!?]$/.test(t) ? t : t + ".";
+  }
+
+  function teamsOf(n, of) {
+    return "found by " + n + " of " + of + (of === 1 ? " team" : " teams");
+  }
+
+  function showSlide() {
+    var s = slides[slideAt];
+    var body = $("stageBody");
+    body.innerHTML = "";
+    var last = slideAt === slides.length - 1;
+    $("revealBtn").disabled = false;
+    $("revealBtn").textContent = last ? "Done"
+      : (slides[slideAt + 1].kind === "highlights" ? "Highlights" : "Next puzzle");
+
+    if (s.kind === "puzzle") {
+      $("stageKicker").textContent = "The answers · puzzle " + (s.p.idx + 1) + " of " + s.of;
+      $("stageTitle").textContent = headline(s.p.name);
+      $("stageHint").textContent = "Easiest group at the top, hardest at the bottom.";
+      s.p.groups.forEach(function (g) {
+        var row = el("div", "arow g" + g.level);
+        row.appendChild(el("div", "atitle", g.title));
+        row.appendChild(el("div", "afound", g.reached ? teamsOf(g.found, g.reached) : "not reached"));
+        row.appendChild(el("div", "awords", g.words.join(", ")));
+        body.appendChild(row);
+      });
+      return;
+    }
+
+    var h = s.h;
+    $("stageKicker").textContent = stageLabel;
+    $("stageTitle").textContent = "Highlights.";
+    $("stageHint").textContent = h.hints_used
+      ? h.hints_used + (h.hints_used === 1 ? " hint was" : " hints were") + " taken this round."
+      : "No hints were taken this round.";
+    var grid = el("div", "hl-grid");
+    grid.appendChild(card("Toughest group",
+      h.toughest ? h.toughest.title : "—",
+      h.toughest ? h.toughest.puzzle + " · " + teamsOf(h.toughest.found, h.toughest.reached) : ""));
+    grid.appendChild(card("Fastest solve",
+      h.fastest ? h.fastest.team : "—",
+      h.fastest ? h.fastest.puzzle + " in " + SC.duration(h.fastest.seconds) : "No puzzle was solved."));
+    var cs = h.clean_sweeps || { count: 0, top_teams: [] };
+    var swept = (cs.count === 1 ? "puzzle" : "puzzles") + " solved with no mistakes or hints";
+    grid.appendChild(card("Clean sweeps",
+      String(cs.count),
+      cs.count ? swept + " · most: " + cs.top_teams.join(", ") + " (" + cs.top_count + ")" : swept));
+    grid.appendChild(card("Easiest group",
+      h.easiest ? h.easiest.title : "—",
+      h.easiest ? h.easiest.puzzle + " · " + teamsOf(h.easiest.found, h.easiest.reached) : ""));
+    body.appendChild(grid);
+  }
+
+  function card(label, value, detail) {
+    var c = el("div", "hl-card");
+    c.appendChild(el("p", "hl-label", label));
+    c.appendChild(el("p", "hl-value", value));
+    if (detail) c.appendChild(el("p", "hl-detail", detail));
+    return c;
+  }
 
   document.addEventListener("keydown", function (e) {
     if ($("stage").hidden) return;
     if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter") {
       e.preventDefault();
-      $("revealBtn").click();
+      if (!$("revealBtn").disabled) $("revealBtn").click();
     } else if (e.key === "Escape") {
-      $("stage").hidden = true;
+      closeStage();
     }
   });
 

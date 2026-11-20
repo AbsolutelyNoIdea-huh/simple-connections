@@ -135,8 +135,15 @@
   }
 
   var WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-               "eleven", "twelve"];
-  function numberWord(n) { return WORDS[n] || String(n); }
+               "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen",
+               "eighteen", "nineteen"];
+  var TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+  // 24 -> "twenty-four". Up to 99, which covers 10 puzzles at 4 points each.
+  function numberWord(n) {
+    if (n >= 0 && n < 20) return WORDS[n];
+    if (n >= 20 && n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? "-" + WORDS[n % 10] : "");
+    return String(n);
+  }
 
   function el(tag, cls, text) {
     var n = document.createElement(tag);

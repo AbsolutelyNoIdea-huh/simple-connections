@@ -252,7 +252,9 @@
     var over = p.status === "solved" || p.status === "failed";
     var canPlay = lastPlayable && p.status === "playing";
 
-    $("pTitle").textContent = "Puzzle " + (view + 1) + ": " + p.name.toLowerCase() + ".";
+    // The puzzle's theme is the headline: "Puzzle 3 of 6" above "Sports."
+    $("pKicker").textContent = "Puzzle " + (view + 1) + " of " + state.puzzle_count;
+    $("pTitle").textContent = headline(p.name);
     $("pSub").textContent = over ? "Puzzle complete." : "Create four groups of four.";
 
     var timeUp = !over && g.timer && SC.timeLeft(g) === 0 && g.status === "live";
@@ -338,6 +340,12 @@
     $("lobbyName").textContent = state.team.name;
     $("lobbyCode").textContent = state.team.code;
 
+    // A teaser: the themes of today's puzzles, in order.
+    var themes = $("themeList");
+    themes.innerHTML = "";
+    state.puzzles.forEach(function (p) { themes.appendChild(el("li", null, p.name)); });
+    $("lobbyThemes").hidden = state.puzzles.length === 0;
+
     var teams = state.lobby_teams || [];
     var others = teams.filter(function (t) { return !t.you; }).length;
     $("lobbyCount").textContent = teams.length === 1 ? "1 team" : teams.length + " teams";
@@ -396,8 +404,12 @@
     t.innerHTML = "";
     state.puzzles.forEach(function (p, i) {
       var done = p.status === "solved" || p.status === "failed";
-      var b = el("button", "tab" + (done ? " done" : ""), "Puzzle " + (i + 1));
+      // Numbers keep six tabs on one line, even on a phone; the theme is
+      // in the tooltip and read out by screen readers.
+      var b = el("button", "tab" + (done ? " done" : ""), String(i + 1));
       b.type = "button";
+      b.title = "Puzzle " + (i + 1) + ": " + p.name;
+      b.setAttribute("aria-label", "Puzzle " + (i + 1) + ": " + p.name + (done ? ", finished" : ""));
       b.setAttribute("aria-current", i === view ? "true" : "false");
       b.disabled = p.status === "locked";
       b.onclick = function () { view = i; selected = []; hintAsking = false; render(); };
@@ -414,6 +426,17 @@
 
   function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
 
+  function ordinal(n) {
+    var s = ["th", "st", "nd", "rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  // A theme as a headline: sentence case, ending in a full stop.
+  function headline(name) {
+    var t = String(name || "").trim();
+    return /[.!?]$/.test(t) ? t : t + ".";
+  }
+
   function endMessage(p) {
     if (p.status === "failed") return "Out of guesses. Here are the groups.";
     var hints = p.hints_used || 0;
@@ -428,10 +451,24 @@
     var frozen = state.game.status === "frozen";
     $("finKicker").textContent = frozen ? "Round over" : "That's a wrap";
     $("finTitle").textContent = state.all_done ? "All done." : "Round over.";
-    $("finLede").textContent = frozen
-      ? "The host has closed the round and saved the scores. Stay tuned for the reveal."
-      : "Every group had one simple idea behind it. The trick was ignoring the words that looked like they fit. Wait for the host to reveal the scoreboard.";
+    var placed = frozen && state.result;
+    $("finLede").textContent = placed
+      ? "The final scores are out."
+      : frozen
+        ? "The host has closed the round and saved the scores. Stay tuned for the reveal."
+        : "Every group had one simple idea behind it. The trick was ignoring the words that looked like they fit. Wait for the host to reveal the scoreboard.";
     $("boardLink").hidden = !frozen;
+
+    // Once the host publishes the scores: this team's final place.
+    var rank = $("finRank");
+    rank.hidden = !placed;
+    if (placed) {
+      var res = state.result;
+      rank.className = "placing" + (res.rank <= 3 ? " top" : "");
+      rank.textContent = res.rank === 1
+        ? "You won! First of " + res.of + "."
+        : "You came " + ordinal(res.rank) + " of " + res.of + ".";
+    }
 
     var rows = $("cardRows");
     rows.innerHTML = "";
@@ -657,6 +694,7 @@
     return [g.status, g.lock_at_zero, g.hints_enabled,
             t ? [t.running, t.running ? t.ends_at : t.left_ms, t.total_s].join(",") : "none",
             s.current, s.all_done, s.total_points,
+            s.result ? s.result.rank + "/" + s.result.of : "",
             (s.lobby_teams || []).map(function (x) { return x.name; }).join("\u0001")]
       .concat(s.puzzles.map(function (p) {
         return p.status + ":" + p.mistakes + ":" + p.solved.length + ":" + p.words.length +
