@@ -3,12 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* Freshness check. Browsers may keep an old copy of this page for up to ten
+   minutes after an upload. If version.json says a newer version is live,
+   reload into it, once. dev\stamp-version.ps1 sets the version. */
+window.SC_VERSION = "20261120-1553";
+(function () {
+  try {
+    fetch("version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (v) {
+        if (!v || !v.version || v.version === window.SC_VERSION) return;
+        var seen = "simple-connections:fresh:" + v.version;
+        if (sessionStorage.getItem(seen)) return;
+        sessionStorage.setItem(seen, "1");
+        location.replace(location.pathname + "?v=" + encodeURIComponent(v.version) + location.hash);
+      })
+      .catch(function () {});
+  } catch (e) {}
+})();
+</script>
 <title>Simple connections</title>
 <link rel="icon" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=20261120-1553">
 </head>
 <body>
 <div class="wrap">
@@ -163,8 +183,8 @@
   </div>
 </div>
 
-<script src="config.js"></script>
-<script src="assets/api.js"></script>
-<script src="assets/app.js"></script>
+<script src="config.js?v=20261120-1553"></script>
+<script src="assets/api.js?v=20261120-1553"></script>
+<script src="assets/app.js?v=20261120-1553"></script>
 </body>
 </html>
