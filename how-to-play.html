@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* Freshness check. Browsers may keep an old copy of this page for up to ten
+   minutes after an upload. If version.json says a newer version is live,
+   reload into it, once. dev\stamp-version.ps1 sets the version. */
+window.SC_VERSION = "20261120-1624";
+(function () {
+  try {
+    fetch("version.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (v) {
+        if (!v || !v.version || v.version === window.SC_VERSION) return;
+        var seen = "simple-connections:fresh:" + v.version;
+        if (sessionStorage.getItem(seen)) return;
+        sessionStorage.setItem(seen, "1");
+        location.replace(location.pathname + "?v=" + encodeURIComponent(v.version) + location.hash);
+      })
+      .catch(function () {});
+  } catch (e) {}
+})();
+</script>
+<title>How to play - Simple connections</title>
+<link rel="icon" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=20261120-1624">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <img class="logo logo-light" alt="Aion Silicon" src="assets/logo-light.svg">
+      <img class="logo logo-dark" alt="Aion Silicon" src="assets/logo-dark.svg">
+    </div>
+  </header>
+
+  <!-- The guide -->
+  <section class="intro howto" id="guide">
+    <p class="kicker">Simple connections</p>
+    <h1>How to play.</h1>
+    <p class="lede">Sixteen words hide four groups of four. Work out what links each group, then find all four. <span id="today"></span></p>
+    <p class="actions"><button class="btn primary" type="button" data-practice>Try a practice puzzle</button></p>
+
+    <h2 class="section">The basics.</h2>
+    <ol class="rules">
+      <li><b>Pick four</b>Select the four words you think belong together, then press Submit.</li>
+      <li><b>Right or wrong</b>A right guess locks the group in and shows its name. A wrong one costs one of your four mistakes. "One away" means three of your four belong together.</li>
+      <li><b>Stuck?</b>Press Hint to see the name of a group you haven't found. It costs a point.</li>
+    </ol>
+    <div class="sample" aria-label="Difficulty, easiest to hardest">
+      <span class="g1">Easiest</span><span class="g2">Easy</span><span class="g3">Tricky</span><span class="g4">Hardest</span>
+    </div>
+    <p class="note colours">Every puzzle has one group of each colour. Found groups take their colour, so you can see how hard each one was.</p>
+
+    <h2 class="section">Kinds of group.</h2>
+    <p class="note">These examples aren't in today's game.</p>
+    <div class="kinds">
+      <div class="kind">
+        <p class="kind-type">Members of a set</p>
+        <p class="kind-title g1">Planets</p>
+        <p class="kind-words">Mars, Venus, Earth, Saturn</p>
+      </div>
+      <div class="kind">
+        <p class="kind-type">Words that mean the same</p>
+        <p class="kind-title g2">Another word for fast</p>
+        <p class="kind-words">Quick, Rapid, Swift, Speedy</p>
+      </div>
+      <div class="kind">
+        <p class="kind-type">Fill in the blank</p>
+        <p class="kind-title g3">___ ball</p>
+        <p class="kind-words">Foot, Basket, Snow, Base</p>
+      </div>
+      <div class="kind">
+        <p class="kind-type">A hidden link</p>
+        <p class="kind-title g4">Things with a shell</p>
+        <p class="kind-words">Egg, Snail, Turtle, Nut</p>
+      </div>
+    </div>
+    <p class="note trap"><b>Watch out for traps.</b> Some words seem to fit two groups. "Snow" could make a snowball or a snowman. Only one way of splitting the sixteen words leaves every group complete.</p>
+
+    <h2 class="section">Scoring.</h2>
+    <p class="scoring-lead">Every puzzle starts worth 4 points. Each mistake and each hint knocks 1 off.</p>
+    <table class="scoring">
+      <caption class="sr-only">Points for one puzzle</caption>
+      <tbody>
+        <tr><th scope="row">Solved with no mistakes</th><td>4 points</td></tr>
+        <tr><th scope="row">Solved with 1 mistake</th><td>3 points</td></tr>
+        <tr><th scope="row">Solved with 2 mistakes</th><td>2 points</td></tr>
+        <tr><th scope="row">Solved with 3 mistakes</th><td>1 point</td></tr>
+        <tr><th scope="row">Out of guesses (4 mistakes)</th><td>0 points</td></tr>
+        <tr><th scope="row">Each hint taken</th><td>−1 point<span class="sub">A puzzle never scores below 0.</span></td></tr>
+        <tr><th scope="row">Time runs out mid-puzzle</th><td>1 point per group found<span class="sub">Up to what the puzzle is still worth.</span></td></tr>
+      </tbody>
+    </table>
+    <p class="note example"><b>For example.</b> Solve a puzzle with 1 mistake and 1 hint: 4 − 1 − 1 = 2 points. Time runs out when you've found 2 groups with no mistakes: 2 points. Time runs out at 2 groups and 3 mistakes: 1 point, because that's all the puzzle was still worth.</p>
+    <ul class="scoring-notes">
+      <li>Your score is the total across all the puzzles.</li>
+      <li id="todayTotal" hidden></li>
+      <li>Ties go to the team that finished all its puzzles quicker, timed from its first move.</li>
+      <li>Teams still playing at the end are ranked by groups found, then by who found them first.</li>
+    </ul>
+
+    <p class="actions end-actions"><button class="btn primary" type="button" data-practice>Try a practice puzzle</button></p>
+  </section>
+
+  <!-- The practice puzzle: runs in this page only and never counts -->
+  <section class="game practice" id="practice" hidden>
+    <div class="prompt">
+      <div>
+        <p class="theme-kicker">Practice puzzle · doesn't count</p>
+        <h2>Practice.</h2>
+      </div>
+      <p id="prSub">Create four groups of four.</p>
+    </div>
+    <div class="board" id="prBoard" aria-live="polite"></div>
+    <div id="prPlay">
+      <div class="status"><span>Mistakes left</span><div class="dots" id="prDots" aria-label="Mistakes left"></div></div>
+      <p class="worth" id="prWorth"></p>
+      <div class="controls">
+        <button class="btn" id="prShuffle" type="button">Shuffle</button>
+        <button class="btn" id="prClear" type="button">Deselect all</button>
+        <button class="btn" id="prHint" type="button">Hint<span class="cost">−1 point</span></button>
+        <button class="btn primary" id="prSubmit" type="button" disabled>Submit</button>
+      </div>
+      <div class="hintask" id="prHintAsk" role="group" aria-labelledby="prHintText" hidden>
+        <p id="prHintText">Reveal the name of one group? It costs 1 point on this puzzle.</p>
+        <div class="btnrow">
+          <button class="btn primary" id="prHintYes" type="button">Reveal a group name</button>
+          <button class="btn" id="prHintNo" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="prToast" role="status"></div>
+    <div class="end" id="prEnd" hidden>
+      <h3 id="prEndMsg"></h3>
+      <span class="pts" id="prEndPts"></span>
+      <div class="controls">
+        <button class="btn primary" id="prAgain" type="button">Play again</button>
+        <button class="btn" id="prDone" type="button">Back to how to play</button>
+      </div>
+    </div>
+    <p class="practice-leave" id="prLeaveRow"><button class="btn" id="prLeave" type="button">Back to how to play</button></p>
+  </section>
+</div>
+
+<script src="config.js?v=20261120-1624"></script>
+<script src="assets/api.js?v=20261120-1624"></script>
+<script src="assets/practice.js?v=20261120-1624"></script>
+</body>
+</html>

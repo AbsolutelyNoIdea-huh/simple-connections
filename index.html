@@ -7,7 +7,7 @@
 /* Freshness check. Browsers may keep an old copy of this page for up to ten
    minutes after an upload. If version.json says a newer version is live,
    reload into it, once. dev\stamp-version.ps1 sets the version. */
-window.SC_VERSION = "20261120-1553";
+window.SC_VERSION = "20261120-1624";
 (function () {
   try {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" })
@@ -28,7 +28,7 @@ window.SC_VERSION = "20261120-1553";
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=20261120-1553">
+<link rel="stylesheet" href="assets/style.css?v=20261120-1624">
 </head>
 <body>
 <div class="wrap">
@@ -183,8 +183,8 @@ window.SC_VERSION = "20261120-1553";
   </div>
 </div>
 
-<script src="config.js?v=20261120-1553"></script>
-<script src="assets/api.js?v=20261120-1553"></script>
-<script src="assets/app.js?v=20261120-1553"></script>
+<script src="config.js?v=20261120-1624"></script>
+<script src="assets/api.js?v=20261120-1624"></script>
+<script src="assets/app.js?v=20261120-1624"></script>
 </body>
 </html>

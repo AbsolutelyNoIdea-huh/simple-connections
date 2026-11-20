@@ -22,6 +22,7 @@
   var infoTimer = null;
   var lastPlayable = null;
   var hintAsking = false; // the "reveal a group name for a point?" step is open
+  var barsShown = {};     // group and hint bars on screen at the last draw
 
   var SCREENS = ["setup", "join", "lobby", "game", "finale"];
   function showOnly(id) {
@@ -272,9 +273,19 @@
     var board = $("board");
     board.innerHTML = "";
     board.className = "board" + (canPlay || over ? "" : " locked");
-    p.solved.forEach(function (grp) { board.appendChild(groupBar(grp, false)); });
-    p.missing.forEach(function (grp) { board.appendChild(groupBar(grp, true)); });
-    (p.hints || []).forEach(function (h) { board.appendChild(hintBar(h)); });
+    // The board is rebuilt on every tap and poll. Only bars that are new
+    // since the last draw play their entrance; the rest would blink.
+    var was = barsShown;
+    barsShown = {};
+    var place = function (node, key) {
+      key = view + ":" + key;
+      if (was[key]) node.style.animation = "none";
+      barsShown[key] = true;
+      board.appendChild(node);
+    };
+    p.solved.forEach(function (grp) { place(groupBar(grp, false), "s:" + grp.title); });
+    p.missing.forEach(function (grp) { place(groupBar(grp, true), "m:" + grp.title); });
+    (p.hints || []).forEach(function (h) { place(hintBar(h), "h:" + h.title); });
 
     if (p.words.length) {
       var grid = el("div", "grid");
